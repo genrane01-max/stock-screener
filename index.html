@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>กรองหุ้นไทย</title>
+  <style>
+    body { font-family: sans-serif; max-width: 700px; margin: 2rem auto; padding: 0 1rem; background: #f8f9fa; }
+    h1 { color: #333; } input, button { padding: 8px; margin: 4px; border-radius: 6px; border: 1px solid #ccc; }
+    button { background: #007bff; color: white; border: none; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: white; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: right; }
+    th { background: #f0f0f0; } .disclaimer { font-size: 0.8em; color: #888; margin-top: 2rem; }
+  </style>
+</head>
+<body>
+  <h1>🔍 กรองหุ้น SET</h1>
+  <label>ปันผลขั้นต่ำ (%) <input id="div" type="number" value="3"></label>
+  <label>P/E สูงสุด <input id="pe" type="number" value="20"></label>
+  <button onclick="search()">ค้นหา</button>
+  <table>
+    <thead><tr><th>หุ้น</th><th>ราคา</th><th>P/E</th><th>ปันผล %</th><th>ROE %</th></tr></thead>
+    <tbody id="results"></tbody>
+  </table>
+  <p class="disclaimer">⚠️ ข้อมูลเพื่อการศึกษาเท่านั้น ไม่ใช่คำแนะนำลงทุน</p>
+  <script>
+    async function search() {
+      const div = document.getElementById("div").value;
+      const pe = document.getElementById("pe").value;
+      const res = await fetch("https://YOUR-RENDER-URL.onrender.com/api/stocks?minDiv=" + div + "&maxPE=" + pe);
+      const stocks = await res.json();
+      document.getElementById("results").innerHTML = stocks.map(s =>
+        "<tr><td>" + s.ticker + "</td><td>" + s.price + "</td><td>" + s.pe + "</td><td>" + s.div + "</td><td>" + s.roe + "</td></tr>"
+      ).join("");
+    }
+    search();
+  </script>
+</body>
+</html>
