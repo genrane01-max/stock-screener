@@ -8,6 +8,11 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, sans-serif; background: #f0f2f5; padding-bottom: 30px; }
     header { background: #007bff; color: white; padding: 16px; text-align: center; font-size: 20px; font-weight: bold; }
+    .tabs { display: flex; background: white; border-bottom: 2px solid #eee; }
+    .tab { flex: 1; padding: 14px; text-align: center; font-weight: bold; color: #666; cursor: pointer; border: none; background: white; font-size: 15px; }
+    .tab.active { color: #007bff; border-bottom: 3px solid #007bff; }
+    .page { display: none; }
+    .page.active { display: block; }
     .sources { background: white; padding: 12px 16px; display: flex; gap: 8px; flex-wrap: wrap; }
     .source-btn {
       flex: 1; min-width: 100px; padding: 12px 8px; border-radius: 10px;
@@ -17,45 +22,93 @@
     .src1 { background: #28a745; }
     .src2 { background: #6c757d; }
     .src3 { background: #6c757d; }
-    .filters { background: white; padding: 16px; display: flex; gap: 8px; flex-wrap: wrap; box-shadow: 0 2px 4px rgba(0,0,0,.1); }
+    .filters { background: white; padding: 16px; display: flex; gap: 8px; flex-wrap: wrap; }
     .filters label { font-size: 13px; color: #555; flex: 1; min-width: 120px; }
     .filters input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; margin-top: 4px; }
-    #searchBtn { width: 100%; padding: 14px; background: #007bff; color: white; border: none; border-radius: 10px; font-size: 17px; font-weight: bold; margin-top: 10px; }
-    #loading { text-align: center; color: #007bff; padding: 20px; font-weight: bold; }
+    .btn { width: 100%; padding: 14px; background: #007bff; color: white; border: none; border-radius: 10px; font-size: 17px; font-weight: bold; margin-top: 10px; }
+    .btn.green { background: #28a745; }
     .card { background: white; margin: 10px 12px; padding: 14px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
     .card .ticker { font-size: 18px; font-weight: bold; }
     .card .row { display: flex; justify-content: space-between; margin-top: 8px; }
     .card .val { font-weight: bold; color: #007bff; }
     .card .div { color: #28a745; }
-    .disclaimer { text-align: center; color: #888; font-size: 12px; margin-top: 16px; padding: 0 16px; }
+    .form-box { background: white; margin: 12px; padding: 16px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+    .form-box label { display: block; font-size: 13px; color: #555; margin-top: 10px; }
+    .form-box input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; margin-top: 4px; }
+    #msg { text-align: center; padding: 12px; font-weight: bold; }
+    .msg-ok { color: #28a745; }
+    .msg-err { color: #dc3545; }
     .hint { text-align: center; color: #666; font-size: 12px; padding: 8px 16px; }
+    .disclaimer { text-align: center; color: #888; font-size: 12px; margin-top: 16px; padding: 0 16px; }
   </style>
 </head>
 <body>
   <header>🔍 กรองหุ้น SET</header>
 
-  <!-- 📚 ปุ่มแหล่งข้อมูล 3 ปุ่ม -->
-  <div class="sources">
-    <a class="source-btn src1" href="https://siamchart.com/stock/" target="_blank">📊 siamchart<br><small>เว็บหลัก ใช้แคป</small></a>
-    <a class="source-btn src2" href="https://www.set.or.th/en/market/product/stock/overview" target="_blank">🏛️ set.or.th<br><small>เว็บทางการ</small></a>
-    <a class="source-btn src3" href="https://www.settrade.com/th/equities/market-summary/top-ranking/top-dividend-yield" target="_blank">📈 settrade<br><small>จัดอันดับ</small></a>
+  <!-- แท็บ 2 อัน -->
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('search')">📊 ดูหุ้น</button>
+    <button class="tab" onclick="showTab('add')">➕ เพิ่มหุ้น</button>
   </div>
-  <p class="hint">กดปุ่มเปิดเว็บ → แคปหน้าจอ → ใช้ระบบสแกนอ่านข้อมูล</p>
 
-  <div class="filters">
-    <label>ปันผลขั้นต่ำ (%)
-      <input id="div" type="number" value="3">
-    </label>
-    <label>P/E สูงสุด
-      <input id="pe" type="number" value="20">
-    </label>
-    <button id="searchBtn" onclick="search()">ค้นหา</button>
+  <!-- หน้า 1: ดูหุ้น -->
+  <div id="page-search" class="page active">
+    <div class="sources">
+      <a class="source-btn src1" href="https://siamchart.com/stock/" target="_blank">📊 siamchart<br><small>เว็บหลัก ใช้แคป</small></a>
+      <a class="source-btn src2" href="https://www.set.or.th/en/market/product/stock/overview" target="_blank">🏛️ set.or.th<br><small>เว็บทางการ</small></a>
+      <a class="source-btn src3" href="https://www.settrade.com/th/equities/market-summary/top-ranking/top-dividend-yield" target="_blank">📈 settrade<br><small>จัดอันดับ</small></a>
+    </div>
+    <p class="hint">กดปุ่มเปิดเว็บ → แคปหน้าจอ → ใช้ระบบสแกนอ่านข้อมูล</p>
+
+    <div class="filters">
+      <label>ปันผลขั้นต่ำ (%)
+        <input id="div" type="number" value="3">
+      </label>
+      <label>P/E สูงสุด
+        <input id="pe" type="number" value="20">
+      </label>
+      <button class="btn" onclick="search()">ค้นหา</button>
+    </div>
+    <div id="loading"></div>
+    <div id="results"></div>
   </div>
-  <div id="loading"></div>
-  <div id="results"></div>
+
+  <!-- หน้า 2: เพิ่มหุ้น -->
+  <div id="page-add" class="page">
+    <div class="form-box">
+      <label>ชื่อหุ้น (เช่น PTT)</label>
+      <input id="f-ticker" type="text" placeholder="PTT">
+
+      <label>ราคา</label>
+      <input id="f-price" type="number" placeholder="32.50">
+
+      <label>P/E</label>
+      <input id="f-pe" type="number" placeholder="8.5">
+
+      <label>ปันผล (%)</label>
+      <input id="f-div" type="number" placeholder="4.2">
+
+      <label>ROE (%)</label>
+      <input id="f-roe" type="number" placeholder="12.3">
+
+      <button class="btn green" onclick="saveStock()">💾 บันทึกหุ้น</button>
+      <div id="msg"></div>
+    </div>
+  </div>
+
   <p class="disclaimer">⚠️ ข้อมูลเพื่อการศึกษาเท่านั้น ไม่ใช่คำแนะนำลงทุน</p>
 
   <script>
+    // สลับแท็บ
+    function showTab(name) {
+      document.getElementById("page-search").classList.toggle("active", name === "search");
+      document.getElementById("page-add").classList.toggle("active", name === "add");
+      document.querySelectorAll(".tab").forEach((t, i) => {
+        t.classList.toggle("active", (name === "search" && i === 0) || (name === "add" && i === 1));
+      });
+    }
+
+    // ดูหุ้น
     async function search() {
       const div = document.getElementById("div").value;
       const pe = document.getElementById("pe").value;
@@ -72,13 +125,54 @@
       }
       document.getElementById("results").innerHTML = stocks.map(s => `
         <div class="card">
-          <div class="ticker">${s.ticker.replace(".BK", "")}</div>
+          <div class="ticker">${s.ticker}</div>
           <div class="row"><span>ราคา</span><span class="val">${s.price} บาท</span></div>
           <div class="row"><span>P/E</span><span class="val">${s.pe}</span></div>
           <div class="row"><span>ปันผล</span><span class="val div">${s.div}%</span></div>
           <div class="row"><span>ROE</span><span class="val">${s.roe}%</span></div>
         </div>`).join("");
     }
+
+    // บันทึกหุ้น
+    async function saveStock() {
+      const msg = document.getElementById("msg");
+      const data = {
+        ticker: document.getElementById("f-ticker").value,
+        price: document.getElementById("f-price").value,
+        pe: document.getElementById("f-pe").value,
+        div: document.getElementById("f-div").value,
+        roe: document.getElementById("f-roe").value
+      };
+
+      if (!data.ticker) {
+        msg.className = "msg-err";
+        msg.innerHTML = "⚠️ ต้องใส่ชื่อหุ้นก่อน";
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/stocks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+
+        if (result.success) {
+          msg.className = "msg-ok";
+          msg.innerHTML = "✅ " + result.message;
+          // เคลียร์ฟอร์ม
+          ["f-ticker","f-price","f-pe","f-div","f-roe"].forEach(id => document.getElementById(id).value = "");
+        } else {
+          msg.className = "msg-err";
+          msg.innerHTML = "❌ " + (result.error || "บันทึกไม่ได้");
+        }
+      } catch (e) {
+        msg.className = "msg-err";
+        msg.innerHTML = "❌ เกิดข้อผิดพลาด: " + e.message;
+      }
+    }
+
     search();
   </script>
 </body>
