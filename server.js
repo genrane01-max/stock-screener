@@ -1,10 +1,19 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 import yahooFinance from "yahoo-finance2";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// แสดงหน้าเว็บเมื่อเปิด URL หลัก
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
 
 const SET_TICKERS = [
   "PTT.BK", "ADVANC.BK", "KBANK.BK", "CPALL.BK",
