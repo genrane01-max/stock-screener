@@ -4,7 +4,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 import admin from "firebase-admin";
 
-// ✅ เชื่อม Firebase ด้วย key จาก Render (ไม่ต้องมี key ในโค้ด!)
 admin.initializeApp({
   credential: admin.credential.cert({
     projectId: process.env.FIREBASE_PROJECT_ID,
@@ -25,7 +24,7 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// 📊 API กรองหุ้น — อ่านจาก Firestore (collection: stocks)
+// 📊 อ่านรายชื่อหุ้นจาก Firebase
 app.get("/api/stocks", async (req, res) => {
   const { minDiv = 0, maxPE = 999 } = req.query;
   try {
@@ -49,7 +48,30 @@ app.get("/api/stocks", async (req, res) => {
     res.json(stocks.sort((a, b) => b.div - a.div));
   } catch (e) {
     console.error("Firebase error:", e.message);
-    res.status(500).json({ error: "ไม่สามารถอ่านข้อมูลจาก Firebase ได้" });
+    res.status(500).json({ error: "อ่านข้อมูลไม่ได้" });
+  }
+});
+
+// ➕ เพิ่ม/แก้ไขข้อมูลหุ้น (บันทึกลง Firebase)
+app.post("/api/stocks", async (req, res) => {
+  const { ticker, price, pe, div, roe } = req.body;
+
+  if (!ticker) {
+    return res.status(400).json({ error: "ต้องใส่ชื่อหุ้น" });
+  }
+
+  try {
+    await db.collection("stocks").doc(ticker.toUpperCase()).set({
+      price: Number(price) || 0,
+      pe: Number(pe) || 0,
+      div: Number(div) || 0,
+      roe: Number(roe) || 0,
+      updatedAt: new Date().toISOString()
+    });
+    res.json({ success: true, message: "บันทึก " + ticker.toUpperCase() + " เรียบร้อย" });
+  } catch (e) {
+    console.error("Save error:", e.message);
+    res.status(500).json({ error: "บันทึกไม่ได้" });
   }
 });
 
