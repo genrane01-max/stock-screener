@@ -10,6 +10,7 @@
     table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: white; }
     th, td { border: 1px solid #ddd; padding: 10px; text-align: right; }
     th { background: #f0f0f0; } .disclaimer { font-size: 0.8em; color: #888; margin-top: 2rem; }
+    #loading { color: #007bff; margin-top: 1rem; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -17,6 +18,7 @@
   <label>ปันผลขั้นต่ำ (%) <input id="div" type="number" value="3"></label>
   <label>P/E สูงสุด <input id="pe" type="number" value="20"></label>
   <button onclick="search()">ค้นหา</button>
+  <div id="loading"></div>
   <table>
     <thead><tr><th>หุ้น</th><th>ราคา</th><th>P/E</th><th>ปันผล %</th><th>ROE %</th></tr></thead>
     <tbody id="results"></tbody>
@@ -26,8 +28,11 @@
     async function search() {
       const div = document.getElementById("div").value;
       const pe = document.getElementById("pe").value;
+      document.getElementById("loading").innerHTML = "⏳ กำลังโหลดข้อมูล... รอสักครู่ (~15-30 วินาที)";
+      document.getElementById("results").innerHTML = "";
       const res = await fetch("/api/stocks?minDiv=" + div + "&maxPE=" + pe);
       const stocks = await res.json();
+      document.getElementById("loading").innerHTML = "";
       document.getElementById("results").innerHTML = stocks.map(s =>
         "<tr><td>" + s.ticker + "</td><td>" + s.price + "</td><td>" + s.pe + "</td><td>" + s.div + "</td><td>" + s.roe + "</td></tr>"
       ).join("");
