@@ -26,7 +26,7 @@
     async function search() {
       const div = document.getElementById("div").value;
       const pe = document.getElementById("pe").value;
-      const res = await fetch("https://YOUR-RENDER-URL.onrender.com/api/stocks?minDiv=" + div + "&maxPE=" + pe);
+      const res = await fetch("https://stock-screener-o4v5.onrender.com/api/stocks?minDiv=" + div + "&maxPE=" + pe);
       const stocks = await res.json();
       document.getElementById("results").innerHTML = stocks.map(s =>
         "<tr><td>" + s.ticker + "</td><td>" + s.price + "</td><td>" + s.pe + "</td><td>" + s.div + "</td><td>" + s.roe + "</td></tr>"
