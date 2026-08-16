@@ -103,7 +103,7 @@ app.post("/api/scan", async (req, res) => {
 - ถ้าอ่านไม่ได้เลยให้ตอบ { "stocks": [] }`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-3.6-flash",
       contents: [
         { inlineData: { data: image, mimeType: mimeType || "image/jpeg" } },
         prompt
