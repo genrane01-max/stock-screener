@@ -14,38 +14,38 @@
     .page { display: none; }
     .page.active { display: block; }
     .sources { background: white; padding: 12px 16px; display: flex; gap: 8px; flex-wrap: wrap; }
-    .source-btn {
-      flex: 1; min-width: 100px; padding: 12px 8px; border-radius: 10px;
-      border: none; font-size: 14px; font-weight: bold; cursor: pointer;
-      text-decoration: none; text-align: center; color: white;
-    }
-    .src1 { background: #28a745; }
-    .src2 { background: #6c757d; }
-    .src3 { background: #6c757d; }
+    .source-btn { flex: 1; min-width: 100px; padding: 12px 8px; border-radius: 10px; border: none; font-size: 14px; font-weight: bold; cursor: pointer; text-decoration: none; text-align: center; color: white; }
+    .src1 { background: #28a745; } .src2 { background: #6c757d; } .src3 { background: #6c757d; }
     .filters { background: white; padding: 16px; display: flex; gap: 8px; flex-wrap: wrap; }
     .filters label { font-size: 13px; color: #555; flex: 1; min-width: 120px; }
     .filters input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; margin-top: 4px; }
     .btn { width: 100%; padding: 14px; background: #007bff; color: white; border: none; border-radius: 10px; font-size: 17px; font-weight: bold; margin-top: 10px; }
     .btn.green { background: #28a745; }
-    .card { background: white; margin: 10px 12px; padding: 14px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+    .section-title { font-size: 17px; font-weight: bold; padding: 16px 12px 4px; }
+    .section-title.dividend { color: #28a745; }
+    .section-title.growth { color: #fd7e14; }
+    .card { background: white; margin: 8px 12px; padding: 14px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
     .card .ticker { font-size: 18px; font-weight: bold; }
-    .card .row { display: flex; justify-content: space-between; margin-top: 8px; }
+    .card .row { display: flex; justify-content: space-between; margin-top: 6px; }
     .card .val { font-weight: bold; color: #007bff; }
     .card .div { color: #28a745; }
+    .badge { display: inline-block; font-size: 11px; padding: 3px 8px; border-radius: 10px; color: white; margin-left: 6px; vertical-align: middle; }
+    .badge.dividend { background: #28a745; }
+    .badge.growth { background: #fd7e14; }
+    .badge.other { background: #6c757d; }
     .form-box { background: white; margin: 12px; padding: 16px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
     .form-box label { display: block; font-size: 13px; color: #555; margin-top: 10px; }
     .form-box input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; margin-top: 4px; }
     #msg { text-align: center; padding: 12px; font-weight: bold; }
-    .msg-ok { color: #28a745; }
-    .msg-err { color: #dc3545; }
+    .msg-ok { color: #28a745; } .msg-err { color: #dc3545; }
     .hint { text-align: center; color: #666; font-size: 12px; padding: 8px 16px; }
     .disclaimer { text-align: center; color: #888; font-size: 12px; margin-top: 16px; padding: 0 16px; }
+    .empty { color: #888; text-align: center; padding: 16px; }
   </style>
 </head>
 <body>
   <header>🔍 กรองหุ้น SET</header>
 
-  <!-- แท็บ 2 อัน -->
   <div class="tabs">
     <button class="tab active" onclick="showTab('search')">📊 ดูหุ้น</button>
     <button class="tab" onclick="showTab('add')">➕ เพิ่มหุ้น</button>
@@ -62,15 +62,27 @@
 
     <div class="filters">
       <label>ปันผลขั้นต่ำ (%)
-        <input id="div" type="number" value="3">
+        <input id="div" type="number" value="0">
       </label>
       <label>P/E สูงสุด
-        <input id="pe" type="number" value="20">
+        <input id="pe" type="number" value="999">
       </label>
       <button class="btn" onclick="search()">ค้นหา</button>
     </div>
+
     <div id="loading"></div>
-    <div id="results"></div>
+
+    <!-- หมวดสายปันผล -->
+    <div class="section-title dividend">🏦 เข้าเกณฑ์ปันผล (ปันผล≥5%, P/E<15, ROE>10%)</div>
+    <div id="list-dividend"></div>
+
+    <!-- หมวดสายเติบโต -->
+    <div class="section-title growth">🚀 เข้าเกณฑ์เติบโต (ROE>15%, P/E>20)</div>
+    <div id="list-growth"></div>
+
+    <!-- หมวดอื่นๆ -->
+    <div class="section-title">📋 หุ้นอื่นๆ ในฐานข้อมูล</div>
+    <div id="list-other"></div>
   </div>
 
   <!-- หน้า 2: เพิ่มหุ้น -->
@@ -78,28 +90,22 @@
     <div class="form-box">
       <label>ชื่อหุ้น (เช่น PTT)</label>
       <input id="f-ticker" type="text" placeholder="PTT">
-
       <label>ราคา</label>
       <input id="f-price" type="number" placeholder="32.50">
-
       <label>P/E</label>
       <input id="f-pe" type="number" placeholder="8.5">
-
       <label>ปันผล (%)</label>
       <input id="f-div" type="number" placeholder="4.2">
-
       <label>ROE (%)</label>
       <input id="f-roe" type="number" placeholder="12.3">
-
       <button class="btn green" onclick="saveStock()">💾 บันทึกหุ้น</button>
       <div id="msg"></div>
     </div>
   </div>
 
-  <p class="disclaimer">⚠️ ข้อมูลเพื่อการศึกษาเท่านั้น ไม่ใช่คำแนะนำลงทุน</p>
+  <p class="disclaimer">⚠️ เครื่องมือคัดกรองสถิติเพื่อการศึกษาเท่านั้น ไม่ใช่คำแนะนำการลงทุน</p>
 
   <script>
-    // สลับแท็บ
     function showTab(name) {
       document.getElementById("page-search").classList.toggle("active", name === "search");
       document.getElementById("page-add").classList.toggle("active", name === "add");
@@ -108,32 +114,41 @@
       });
     }
 
-    // ดูหุ้น
+    function stockCard(s) {
+      const label = s.category === "dividend" ? '<span class="badge dividend">ปันผล</span>'
+        : s.category === "growth" ? '<span class="badge growth">เติบโต</span>'
+        : '<span class="badge other">ทั่วไป</span>';
+      return `
+        <div class="card">
+          <div class="ticker">${s.ticker} ${label}</div>
+          <div class="row"><span>ราคา</span><span class="val">${s.price} บาท</span></div>
+          <div class="row"><span>P/E</span><span class="val">${s.pe}</span></div>
+          <div class="row"><span>ปันผล</span><span class="val div">${s.div}%</span></div>
+          <div class="row"><span>ROE</span><span class="val">${s.roe}%</span></div>
+        </div>`;
+    }
+
     async function search() {
       const div = document.getElementById("div").value;
       const pe = document.getElementById("pe").value;
       document.getElementById("loading").innerHTML = "⏳ กำลังโหลดข้อมูล...";
-      document.getElementById("results").innerHTML = "";
 
       const res = await fetch("/api/stocks?minDiv=" + div + "&maxPE=" + pe);
       const stocks = await res.json();
       document.getElementById("loading").innerHTML = "";
 
-      if (stocks.length === 0) {
-        document.getElementById("results").innerHTML = "<div class='card'>ไม่พบหุ้นที่ตรงเงื่อนไข ลองลดค่าเงื่อนไขดู</div>";
-        return;
-      }
-      document.getElementById("results").innerHTML = stocks.map(s => `
-        <div class="card">
-          <div class="ticker">${s.ticker}</div>
-          <div class="row"><span>ราคา</span><span class="val">${s.price} บาท</span></div>
-          <div class="row"><span>P/E</span><span class="val">${s.pe}</span></div>
-          <div class="row"><span>ปันผล</span><span class="val div">${s.div}%</span></div>
-          <div class="row"><span>ROE</span><span class="val">${s.roe}%</span></div>
-        </div>`).join("");
+      const dividend = stocks.filter(s => s.category === "dividend");
+      const growth = stocks.filter(s => s.category === "growth");
+      const other = stocks.filter(s => s.category === "other");
+
+      document.getElementById("list-dividend").innerHTML = dividend.length
+        ? dividend.map(stockCard).join("") : '<div class="empty">ยังไม่มีหุ้นเข้าเกณฑ์นี้</div>';
+      document.getElementById("list-growth").innerHTML = growth.length
+        ? growth.map(stockCard).join("") : '<div class="empty">ยังไม่มีหุ้นเข้าเกณฑ์นี้</div>';
+      document.getElementById("list-other").innerHTML = other.length
+        ? other.map(stockCard).join("") : '<div class="empty">ยังไม่มีหุ้น</div>';
     }
 
-    // บันทึกหุ้น
     async function saveStock() {
       const msg = document.getElementById("msg");
       const data = {
@@ -157,11 +172,9 @@
           body: JSON.stringify(data)
         });
         const result = await res.json();
-
         if (result.success) {
           msg.className = "msg-ok";
           msg.innerHTML = "✅ " + result.message;
-          // เคลียร์ฟอร์ม
           ["f-ticker","f-price","f-pe","f-div","f-roe"].forEach(id => document.getElementById(id).value = "");
         } else {
           msg.className = "msg-err";
