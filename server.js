@@ -24,9 +24,15 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// 📊 อ่านรายชื่อหุ้นจาก Firebase
+// 🏷️ ฟังก์ชันแบ่งหมวดหุ้น (ใช้เกณฑ์ตัวเลข — ไม่ใช่คำแนะนำซื้อ)
+function getCategory(s) {
+  if (s.div >= 5 && s.pe < 15 && s.roe > 10) return "dividend"; // สายปันผล
+  if (s.roe > 15 && s.pe > 20) return "growth";                 // สายเติบโต
+  return "other";                                               // ยังไม่เข้าเกณฑ์
+}
+
+// 📊 อ่านรายชื่อหุ้นจาก Firebase + คำนวณหมวด
 app.get("/api/stocks", async (req, res) => {
-  const { minDiv = 0, maxPE = 999 } = req.query;
   try {
     const snapshot = await db.collection("stocks").get();
     const stocks = [];
@@ -40,25 +46,21 @@ app.get("/api/stocks", async (req, res) => {
         div: s.div || 0,
         roe: s.roe || 0
       };
-      if (stock.div >= minDiv && stock.pe <= maxPE) {
-        stocks.push(stock);
-      }
+      stock.category = getCategory(stock);
+      stocks.push(stock);
     });
 
-    res.json(stocks.sort((a, b) => b.div - a.div));
+    res.json(stocks);
   } catch (e) {
     console.error("Firebase error:", e.message);
     res.status(500).json({ error: "อ่านข้อมูลไม่ได้" });
   }
 });
 
-// ➕ เพิ่ม/แก้ไขข้อมูลหุ้น (บันทึกลง Firebase)
+// ➕ เพิ่ม/แก้ไขข้อมูลหุ้น
 app.post("/api/stocks", async (req, res) => {
   const { ticker, price, pe, div, roe } = req.body;
-
-  if (!ticker) {
-    return res.status(400).json({ error: "ต้องใส่ชื่อหุ้น" });
-  }
+  if (!ticker) return res.status(400).json({ error: "ต้องใส่ชื่อหุ้น" });
 
   try {
     await db.collection("stocks").doc(ticker.toUpperCase()).set({
