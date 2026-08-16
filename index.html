@@ -9,7 +9,7 @@
     body { font-family: -apple-system, sans-serif; background: #f0f2f5; padding-bottom: 30px; }
     header { background: #007bff; color: white; padding: 16px; text-align: center; font-size: 20px; font-weight: bold; }
     .tabs { display: flex; background: white; border-bottom: 2px solid #eee; }
-    .tab { flex: 1; padding: 14px; text-align: center; font-weight: bold; color: #666; cursor: pointer; border: none; background: white; font-size: 15px; }
+    .tab { flex: 1; padding: 14px; text-align: center; font-weight: bold; color: #666; cursor: pointer; border: none; background: white; font-size: 14px; }
     .tab.active { color: #007bff; border-bottom: 3px solid #007bff; }
     .page { display: none; }
     .page.active { display: block; }
@@ -41,6 +41,11 @@
     .hint { text-align: center; color: #666; font-size: 12px; padding: 8px 16px; }
     .disclaimer { text-align: center; color: #888; font-size: 12px; margin-top: 16px; padding: 0 16px; }
     .empty { color: #888; text-align: center; padding: 16px; }
+    .upload-box { text-align: center; padding: 30px 16px; }
+    .upload-box input[type=file] { margin: 0 auto; display: block; }
+    #preview { max-width: 100%; border-radius: 10px; margin-top: 12px; }
+    .scan-item { background: white; margin: 10px 12px; padding: 14px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+    .scan-item input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; margin-top: 4px; }
   </style>
 </head>
 <body>
@@ -49,6 +54,7 @@
   <div class="tabs">
     <button class="tab active" onclick="showTab('search')">📊 ดูหุ้น</button>
     <button class="tab" onclick="showTab('add')">➕ เพิ่มหุ้น</button>
+    <button class="tab" onclick="showTab('scan')">📸 สแกนรูป</button>
   </div>
 
   <!-- หน้า 1: ดูหุ้น -->
@@ -58,7 +64,7 @@
       <a class="source-btn src2" href="https://www.set.or.th/en/market/product/stock/overview" target="_blank">🏛️ set.or.th<br><small>เว็บทางการ</small></a>
       <a class="source-btn src3" href="https://www.settrade.com/th/equities/market-summary/top-ranking/top-dividend-yield" target="_blank">📈 settrade<br><small>จัดอันดับ</small></a>
     </div>
-    <p class="hint">กดปุ่มเปิดเว็บ → แคปหน้าจอ → ใช้ระบบสแกนอ่านข้อมูล</p>
+    <p class="hint">กดปุ่มเปิดเว็บ → แคปหน้าจอ → ไปแท็บสแกนรูป</p>
 
     <div class="filters">
       <label>ปันผลขั้นต่ำ (%)
@@ -69,19 +75,13 @@
       </label>
       <button class="btn" onclick="search()">ค้นหา</button>
     </div>
-
     <div id="loading"></div>
 
-    <!-- หมวดสายปันผล -->
-    <div class="section-title dividend">🏦 เข้าเกณฑ์ปันผล (ปันผล≥5%, P/E<15, ROE>10%)</div>
+    <div class="section-title dividend">🏦 เข้าเกณฑ์ปันผล</div>
     <div id="list-dividend"></div>
-
-    <!-- หมวดสายเติบโต -->
-    <div class="section-title growth">🚀 เข้าเกณฑ์เติบโต (ROE>15%, P/E>20)</div>
+    <div class="section-title growth">🚀 เข้าเกณฑ์เติบโต</div>
     <div id="list-growth"></div>
-
-    <!-- หมวดอื่นๆ -->
-    <div class="section-title">📋 หุ้นอื่นๆ ในฐานข้อมูล</div>
+    <div class="section-title">📋 หุ้นอื่นๆ</div>
     <div id="list-other"></div>
   </div>
 
@@ -103,14 +103,27 @@
     </div>
   </div>
 
+  <!-- หน้า 3: สแกนรูป -->
+  <div id="page-scan" class="page">
+    <div class="upload-box">
+      <p class="hint">เลือกภาพสกรีนช็อตจากเว็บหุ้น (siamchart / set.or.th / settrade)</p>
+      <input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)">
+      <br><img id="preview" style="display:none">
+      <div id="scanMsg"></div>
+      <div id="scanResults"></div>
+    </div>
+  </div>
+
   <p class="disclaimer">⚠️ เครื่องมือคัดกรองสถิติเพื่อการศึกษาเท่านั้น ไม่ใช่คำแนะนำการลงทุน</p>
 
   <script>
     function showTab(name) {
       document.getElementById("page-search").classList.toggle("active", name === "search");
       document.getElementById("page-add").classList.toggle("active", name === "add");
+      document.getElementById("page-scan").classList.toggle("active", name === "scan");
       document.querySelectorAll(".tab").forEach((t, i) => {
-        t.classList.toggle("active", (name === "search" && i === 0) || (name === "add" && i === 1));
+        const names = ["search", "add", "scan"];
+        t.classList.toggle("active", names[i] === name);
       });
     }
 
@@ -158,13 +171,11 @@
         div: document.getElementById("f-div").value,
         roe: document.getElementById("f-roe").value
       };
-
       if (!data.ticker) {
         msg.className = "msg-err";
         msg.innerHTML = "⚠️ ต้องใส่ชื่อหุ้นก่อน";
         return;
       }
-
       try {
         const res = await fetch("/api/stocks", {
           method: "POST",
@@ -184,6 +195,86 @@
         msg.className = "msg-err";
         msg.innerHTML = "❌ เกิดข้อผิดพลาด: " + e.message;
       }
+    }
+
+    // 📸 ระบบสแกนรูป
+    function handleFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result.split(",")[1];
+        document.getElementById("preview").src = reader.result;
+        document.getElementById("preview").style.display = "block";
+        await scanImage(base64, file.type);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function scanImage(base64, mimeType) {
+      const msg = document.getElementById("scanMsg");
+      msg.innerHTML = "🤖 AI กำลังอ่านข้อมูลจากรูป...";
+      document.getElementById("scanResults").innerHTML = "";
+
+      try {
+        const res = await fetch("/api/scan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: base64, mimeType })
+        });
+        const data = await res.json();
+        msg.innerHTML = "";
+
+        if (data.error) {
+          msg.className = "msg-err";
+          msg.innerHTML = "❌ " + data.error;
+          return;
+        }
+
+        if (!data.stocks || data.stocks.length === 0) {
+          msg.className = "msg-err";
+          msg.innerHTML = "😅 อ่านไม่พบข้อมูลหุ้น ลองแคปให้ชัดกว่านี้ หรือใช้รูปเต็มจอ";
+          return;
+        }
+
+        // แสดงผลให้ตรวจ + แก้ไข ก่อนบันทึก
+        document.getElementById("scanResults").innerHTML =
+          "<p class='hint'>✅ AI อ่านได้ " + data.stocks.length + " ตัว — ตรวจสอบและแก้ไขก่อนบันทึก</p>" +
+          data.stocks.map((s, i) => `
+            <div class="scan-item">
+              <input id="s-ticker-${i}" type="text" value="${s.ticker || ''}" placeholder="ชื่อหุ้น">
+              <input id="s-price-${i}" type="number" step="0.01" value="${s.price || ''}" placeholder="ราคา">
+              <input id="s-pe-${i}" type="number" step="0.01" value="${s.pe || ''}" placeholder="P/E">
+              <input id="s-div-${i}" type="number" step="0.01" value="${s.div || ''}" placeholder="ปันผล %">
+              <input id="s-roe-${i}" type="number" step="0.01" value="${s.roe || ''}" placeholder="ROE %">
+              <button class="btn green" onclick="saveScanned(${i})">💾 บันทึกหุ้น ${i + 1}</button>
+            </div>`).join("");
+      } catch (e) {
+        msg.className = "msg-err";
+        msg.innerHTML = "❌ เกิดข้อผิดพลาด: " + e.message;
+      }
+    }
+
+    async function saveScanned(i) {
+      const data = {
+        ticker: document.getElementById("s-ticker-" + i).value,
+        price: document.getElementById("s-price-" + i).value,
+        pe: document.getElementById("s-pe-" + i).value,
+        div: document.getElementById("s-div-" + i).value,
+        roe: document.getElementById("s-roe-" + i).value
+      };
+      if (!data.ticker) {
+        alert("ต้องใส่ชื่อหุ้น");
+        return;
+      }
+      const res = await fetch("/api/stocks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      alert(result.success ? "✅ " + result.message : "❌ " + (result.error || "บันทึกไม่ได้"));
     }
 
     search();
